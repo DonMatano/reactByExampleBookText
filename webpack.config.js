@@ -9,12 +9,17 @@ module.exports = {
     },
     module: {
         loaders: [{
-            test: /\.js$/,
-            include: path.resolve(__dirname, 'src'),
-            loader: 'babel-loader',
-            query: {
-                presets: ['react', 'es2015', 'stage-0']
+                test: /\.js$/,
+                include: path.resolve(__dirname, 'src'),
+                loader: 'babel-loader',
+                query: {
+                    presets: ['react', 'es2015', 'stage-0']
+                }
+            },
+            {
+                test: /\.css$/,
+                loader: 'style-loader!css-loader'
             }
-        }]
+        ]
     }
 };
