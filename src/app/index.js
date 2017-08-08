@@ -1,47 +1,71 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import PropTypes from 'prop-types';
+// Instead of using jQuery.timeago install the timeago.js to format the time.
+import timeago from 'timeago.js';
 
-const data = [
-            {
-                "when": "2 minutes ago",
-                "who": "Jill Dupre",
-                "desciption": "Created new account"
-            },
-            {
-                "when": "1 hour ago",
-                "who": "Lose White",
-                "desciption": "Added first chapter"
-            },
-            {
-                "when": "2 hours ago",
-                "who": "Jordan Whash",
-                "desciption": "Created new account"
-            }
-];
+console.log('start');
         
-const headings = ['When', 'Who', 'Description'];
-
-const props = {
-    headings: headings,
-    changeSets: data
-};
-
+const headings = ['Updated at', 'Author', 'Change'];
 
 class App extends React.Component{
     constructor(props) {
         super(props);
-    }    
+        this.state = {
+            changeSets: []
+        };
+    }   
 
     render() {
 
         return (
             <RecentChangeTable>
                 <Headings headings={this.props.headings} />
-                <Rows changeSet={this.props.changeSets}/>
+                <Rows changeSets={this.state.changeSets}/>
             </RecentChangeTable> 
         );
     }
+
+    componentDidMount() {
+        $.ajax({
+            type: "GET",
+            url: "https://openlibrary.org/recentchanges.json?limit=10",
+            data: {},
+            context: this,
+            dataType: "json",
+            success: (response) => {
+                const changeSets = this.mapOpenLibraryDataToChangeSet(response);
+                this.setState({ changeSets: changeSets });
+            }
+        });
+    }
+
+    mapOpenLibraryDataToChangeSet(data) {
+        return (
+            data.map((change, index) => {
+                return {
+                    "when": timeago().format(change.timestamp),
+                    "who": change.author.key,
+                    "description": change.comment      
+                }
+            }
+            )    
+        );
+    }    
 }
+
+
+
+App.prototypes = {
+    headings: PropTypes.array,
+    changeSets: PropTypes.array,
+    author: PropTypes.string.isRequired
+};
+
+// Default props of the app if heading isn't passed
+App.defaultProps = {
+    headings: ['When happened', 'Who did it', 'What they change']
+};
 
 class RecentChangeTable extends React.Component{
     constructor(props) {
@@ -49,9 +73,14 @@ class RecentChangeTable extends React.Component{
     }
 
     render() {
-        return <table className = 'table'>
-                {this.props.children}
-              </table>;
+        return (
+            <div>
+                <h1>Recent Changes </h1>
+                <table className='table'>
+                    {this.props.children}
+                </table>
+            </div>
+        );
     }
 }
 
@@ -97,7 +126,7 @@ class Rows extends React.Component{
     }
 
     render() {
-        const rows = this.props.changeSet.map((changeSet, index) => {
+        const rows = this.props.changeSets.map((changeSet, index) => {
             return (<Row key={index} changeSet={changeSet}/>);
         });
         return (
@@ -114,12 +143,12 @@ class Headings extends React.Component{
     }
 
     render() {
-        const headings = this.props.headings.map((heading, index) => {
-            return (<Heading key={index} heading={heading}/>);
+        const headings = this.props.headings.map((name, index) => {
+            return (<Heading key={"heading-" + index} heading={name}/>);
         });
 
-        return (<thead><tr>{headings}</tr></thead>)
+        return (<thead><tr className='table-th'>{headings}</tr></thead>)
     }
 }
 
-ReactDOM.render(<App {...props} headings = {['Updated at ', 'Author', 'Change']} />, document.getElementById('container'));
+ReactDOM.render(<App headings = {headings} />, document.getElementById('container'));
